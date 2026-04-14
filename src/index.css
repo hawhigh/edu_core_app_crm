@@ -1,0 +1,23 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #0A05E9;
+  --color-accent: #7206FE;
+  --color-lime: #E6FE07;
+  --color-bg: #FBF9F5;
+  --color-card: #FFFFFF;
+  --color-border: #e5e1dc;
+  --color-text-dark: #313131;
+  --color-text-muted: #8e8d87;
+  
+  --radius-3xl: 32px; /* 50px might be too large for some elements, but we'll use 32px as 3xl and maybe custom for cards */
+}
+
+@layer base {
+  body {
+    background-color: var(--color-bg);
+    color: var(--color-text-dark);
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+}
