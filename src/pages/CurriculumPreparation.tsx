@@ -1,4 +1,4 @@
-import { BookOpen, Plus, Save, Trash2, GripVertical, Edit2, ExternalLink, CheckCircle, Send, ChevronRight, ChevronDown, RotateCcw, ArrowUp, ArrowDown } from "lucide-react";
+import { BookOpen, Plus, Save, Trash2, GripVertical, Edit2, ExternalLink, CheckCircle, Send, ChevronRight, ChevronDown, RotateCcw, ArrowUp, ArrowDown, ClipboardCheck } from "lucide-react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAcademic } from "../contexts/AcademicContext";
 import { useState } from "react";
@@ -265,6 +265,16 @@ export default function CurriculumPreparation() {
               <div>
                 <label className="block text-sm font-bold text-text-dark mb-2">Total Hours</label>
                 <input type="number" defaultValue={120} className="w-full p-3 rounded-xl border border-border bg-bg focus:outline-none focus:ring-2 focus:ring-primary/50" />
+              </div>
+
+              <div className="pt-4 border-t border-border">
+                <Link 
+                  to={`/teacher/grades?subjectId=${subjectId}`}
+                  className="w-full py-4 rounded-2xl bg-accent text-white font-bold flex items-center justify-center gap-2 hover:bg-accent/90 transition-all shadow-lg shadow-accent/20"
+                >
+                  <ClipboardCheck className="w-5 h-5" />
+                  Manage Student Grades
+                </Link>
               </div>
             </div>
           </div>

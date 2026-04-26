@@ -10,7 +10,7 @@ export default function Overview() {
       </header>
 
       <div 
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
       >
         <div>
           <Link to="/student" className="block h-full bg-card p-6 rounded-3xl border border-border hover:shadow-lg transition-all group">

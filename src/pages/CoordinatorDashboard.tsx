@@ -47,7 +47,7 @@ export default function CoordinatorDashboard() {
         setFormData({ name: teacher?.name, email: teacher?.email, specialization: teacher?.specialization.join(', ') });
       } else if (type === 'subject') {
         const sub = subjects.find(s => s.id === id);
-        setFormData({ name: sub?.name, classId: sub?.classId, teacherId: sub?.teacherId });
+        setFormData({ name: sub?.name, classId: sub?.classId, teacherIds: sub?.teacherIds || [] });
       } else if (type === 'student') {
         const student = students.find(s => s.id === id);
         setFormData({ name: student?.name, email: student?.email, classId: student?.classId, parentEmail: student?.parentEmail });
@@ -89,24 +89,24 @@ export default function CoordinatorDashboard() {
     <div className="flex flex-col gap-8">
       {/* Header */}
       <header 
-        className="bg-card p-8 rounded-3xl border border-border flex flex-col md:flex-row justify-between items-center gap-6 shadow-sm"
+        className="bg-card p-6 md:p-8 rounded-3xl border border-border flex flex-col lg:flex-row justify-between items-center gap-6 shadow-sm"
       >
-        <div>
-          <h1 className="text-3xl font-bold text-text-dark">Coordinator Dashboard</h1>
-          <p className="text-text-muted mt-1">Manage schools, classes, teachers, and curriculum structure.</p>
+        <div className="w-full lg:w-auto">
+          <h1 className="text-2xl md:text-3xl font-bold text-text-dark">Coordinator Dashboard</h1>
+          <p className="text-text-muted mt-1 text-sm">Manage schools, classes, teachers, and curriculum structure.</p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
           {isResetting ? (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 w-full sm:w-auto">
               <button 
                 onClick={() => resetData()}
-                className="bg-red-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-red-700 transition-all"
+                className="flex-1 sm:flex-none bg-red-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-red-700 transition-all"
               >
                 Confirm Reset
               </button>
               <button 
                 onClick={() => setIsResetting(false)}
-                className="bg-bg text-text-muted border border-border px-4 py-2 rounded-xl text-xs font-bold hover:bg-card transition-all"
+                className="flex-1 sm:flex-none bg-bg text-text-muted border border-border px-4 py-2 rounded-xl text-xs font-bold hover:bg-card transition-all"
               >
                 Cancel
               </button>
@@ -114,7 +114,7 @@ export default function CoordinatorDashboard() {
           ) : (
             <button 
               onClick={() => setIsResetting(true)}
-              className="bg-bg text-text-muted border border-border px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 hover:bg-red-50 hover:text-red-500 hover:border-red-200 transition-all"
+              className="w-full sm:w-auto bg-bg text-text-muted border border-border px-4 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-2 hover:bg-red-50 hover:text-red-500 hover:border-red-200 transition-all"
             >
               <RefreshCw className="w-3 h-3" />
               Reset System Data
@@ -122,7 +122,7 @@ export default function CoordinatorDashboard() {
           )}
           <button 
             onClick={() => openModal('class')}
-            className="bg-primary text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20"
+            className="w-full sm:w-auto bg-primary text-white px-6 py-3 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20"
           >
             <Plus className="w-5 h-5" />
             Add New Entity
@@ -264,7 +264,11 @@ export default function CoordinatorDashboard() {
                             </div>
                             <div>
                               <p className="text-sm font-bold text-text-dark">{sub.name}</p>
-                              <p className="text-[10px] text-text-muted">{teachers.find(t => t.id === sub.teacherId)?.name || 'No Teacher'}</p>
+                              <p className="text-[10px] text-text-muted">
+                                {sub.teacherIds.length > 0 
+                                  ? sub.teacherIds.map(tid => teachers.find(t => t.id === tid)?.name).filter(Boolean).join(', ')
+                                  : 'No Teacher'}
+                              </p>
                             </div>
                           </div>
                           <button onClick={() => openModal('subject', sub.id)} className="opacity-0 group-hover:opacity-100 transition-opacity text-text-muted hover:text-primary">
@@ -348,13 +352,13 @@ export default function CoordinatorDashboard() {
                 <div className="mb-6 flex-1">
                   <p className="text-[10px] font-bold text-text-muted uppercase tracking-widest mb-2">Teaching Subjects</p>
                   <div className="space-y-2">
-                    {subjects.filter(s => s.teacherId === teacher.id).map(sub => (
+                    {subjects.filter(s => s.teacherIds.includes(teacher.id)).map(sub => (
                       <div key={sub.id} className="flex items-center justify-between text-xs p-2 rounded-lg bg-bg border border-border">
                         <span className="font-medium text-text-dark">{sub.name}</span>
                         <span className="text-text-muted">Class {classes.find(c => c.id === sub.classId)?.name}</span>
                       </div>
                     ))}
-                    {subjects.filter(s => s.teacherId === teacher.id).length === 0 && (
+                    {subjects.filter(s => s.teacherIds.includes(teacher.id)).length === 0 && (
                       <p className="text-xs text-text-muted italic">No subjects assigned yet.</p>
                     )}
                   </div>
@@ -387,15 +391,27 @@ export default function CoordinatorDashboard() {
                 <h3 className="text-xl font-bold text-text-dark mb-2">{sub.name}</h3>
                 
                 <div className="mb-6 flex-1">
-                  <p className="text-[10px] font-bold text-text-muted uppercase tracking-widest mb-2">Teacher</p>
-                  <div className="flex items-center gap-3 p-3 rounded-2xl bg-bg border border-border">
-                    <div className="w-8 h-8 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center font-bold text-xs">
-                      {teachers.find(t => t.id === sub.teacherId)?.name[0] || '?'}
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-text-dark">{teachers.find(t => t.id === sub.teacherId)?.name || 'Unassigned'}</p>
-                      <p className="text-[10px] text-text-muted">{teachers.find(t => t.id === sub.teacherId)?.email || 'Please assign a teacher'}</p>
-                    </div>
+                  <p className="text-[10px] font-bold text-text-muted uppercase tracking-widest mb-2">Teachers</p>
+                  <div className="flex flex-col gap-2">
+                    {sub.teacherIds.map(tid => {
+                      const teacher = teachers.find(t => t.id === tid);
+                      return (
+                        <div key={tid} className="flex items-center gap-3 p-3 rounded-2xl bg-bg border border-border">
+                          <div className="w-8 h-8 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center font-bold text-xs">
+                            {teacher?.name[0] || '?'}
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold text-text-dark">{teacher?.name || 'Unknown'}</p>
+                            <p className="text-[10px] text-text-muted">{teacher?.email || ''}</p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {sub.teacherIds.length === 0 && (
+                      <div className="p-3 rounded-2xl bg-bg border border-dashed border-border flex items-center justify-center">
+                        <p className="text-xs text-text-muted italic">Unassigned</p>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -512,7 +528,12 @@ export default function CoordinatorDashboard() {
                           </div>
                           <h4 className="font-bold text-text-dark text-sm">{subjects.find(s => s.id === entry.subjectId)?.name || 'Unknown'}</h4>
                           <p className="text-[10px] text-text-muted mt-1">
-                            {teachers.find(t => t.id === subjects.find(s => s.id === entry.subjectId)?.teacherId)?.name || 'No Teacher'}
+                            {(() => {
+                              const sub = subjects.find(s => s.id === entry.subjectId);
+                              return sub?.teacherIds.length 
+                                ? sub.teacherIds.map(tid => teachers.find(t => t.id === tid)?.name).filter(Boolean).join(', ')
+                                : 'No Teacher';
+                            })()}
                           </p>
                         </div>
                       ))}
@@ -665,15 +686,27 @@ export default function CoordinatorDashboard() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-text-muted uppercase tracking-widest mb-2">Teacher</label>
-                    <select 
-                      value={formData.teacherId || ''}
-                      onChange={(e) => setFormData({...formData, teacherId: e.target.value})}
-                      className="w-full bg-bg border border-border rounded-xl px-4 py-3 focus:outline-none focus:border-primary transition-colors"
-                    >
-                      <option value="">Select Teacher</option>
-                      {teachers.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-                    </select>
+                    <label className="block text-xs font-bold text-text-muted uppercase tracking-widest mb-2">Teachers</label>
+                    <div className="grid grid-cols-2 gap-2 bg-bg border border-border rounded-2xl p-4 max-h-[160px] overflow-y-auto">
+                      {teachers.map(t => (
+                        <label key={t.id} className="flex items-center gap-2 cursor-pointer hover:bg-card p-1 rounded-lg transition-all">
+                          <input 
+                            type="checkbox" 
+                            checked={(formData.teacherIds || []).includes(t.id)}
+                            onChange={(e) => {
+                              const current = formData.teacherIds || [];
+                              if (e.target.checked) {
+                                setFormData({...formData, teacherIds: [...current, t.id]});
+                              } else {
+                                setFormData({...formData, teacherIds: current.filter((id: string) => id !== t.id)});
+                              }
+                            }}
+                            className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
+                          />
+                          <span className="text-xs font-medium text-text-dark">{t.name}</span>
+                        </label>
+                      ))}
+                    </div>
                   </div>
                 </>
               )}

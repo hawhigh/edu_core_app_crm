@@ -33,7 +33,7 @@ export default function SubjectContent() {
   const subject = subjects.find(s => s.id === (lesson?.subjectId || subjectId));
   const cls = classes.find(c => c.id === subject?.classId);
   const topic = topics.find(t => t.id === lesson?.topicId);
-  const teacher = teachers.find(t => t.id === subject?.teacherId);
+  const subjectTeachers = teachers.filter(t => subject?.teacherIds?.includes(t.id));
 
   const [showAllHistory, setShowAllHistory] = useState(false);
 
@@ -95,8 +95,12 @@ export default function SubjectContent() {
             <ArrowLeft className="w-3 h-3" /> Back to Dashboard
           </Link>
           <div>
-            <div className="text-sm text-text-muted mb-1 font-medium">Teacher</div>
-            <div className="font-bold text-lg text-primary">{teacher?.name || 'Mr. Smith'}</div>
+            <div className="text-sm text-text-muted mb-1 font-medium">{subjectTeachers.length > 1 ? 'Teachers' : 'Teacher'}</div>
+            <div className="font-bold text-lg text-primary">
+              {subjectTeachers.length > 0 
+                ? subjectTeachers.map(t => t.name).join(', ') 
+                : 'Unassigned'}
+            </div>
           </div>
         </div>
       </header>
@@ -236,12 +240,18 @@ export default function SubjectContent() {
             <div className="space-y-3 mb-6">
               <h3 className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Files ({lesson.materials.filter(m => m.type === 'file').length})</h3>
               {lesson.materials.filter(m => m.type === 'file').map((file, i) => (
-                <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-bg border border-border hover:border-primary/50 cursor-pointer transition-all group">
+                <a 
+                  key={i} 
+                  href={file.url || "#"} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 p-3 rounded-xl bg-bg border border-border hover:border-primary/50 cursor-pointer transition-all group"
+                >
                   <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0 group-hover:bg-primary group-hover:text-white transition-colors">
                     <FileText className="w-4 h-4" />
                   </div>
                   <span className="text-sm font-medium truncate text-text-dark">{file.name}</span>
-                </div>
+                </a>
               ))}
               {lesson.materials.filter(m => m.type === 'file').length === 0 && (
                 <p className="text-xs text-text-muted italic">No files attached.</p>
@@ -251,12 +261,18 @@ export default function SubjectContent() {
             <div className="space-y-3">
               <h3 className="text-[10px] font-bold text-text-muted uppercase tracking-widest">External Links</h3>
               {lesson.materials.filter(m => m.type === 'link').map((link, i) => (
-                <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-bg border border-border hover:border-accent/50 cursor-pointer transition-all group">
+                <a 
+                  key={i} 
+                  href={link.url || "#"} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 p-3 rounded-xl bg-bg border border-border hover:border-accent/50 cursor-pointer transition-all group"
+                >
                   <div className="w-8 h-8 rounded-lg bg-accent/10 text-accent flex items-center justify-center shrink-0 group-hover:bg-accent group-hover:text-white transition-colors">
                     <LinkIcon className="w-4 h-4" />
                   </div>
                   <span className="text-sm font-medium truncate text-text-dark">{link.name}</span>
-                </div>
+                </a>
               ))}
               {lesson.materials.filter(m => m.type === 'link').length === 0 && (
                 <p className="text-xs text-text-muted italic">No links attached.</p>

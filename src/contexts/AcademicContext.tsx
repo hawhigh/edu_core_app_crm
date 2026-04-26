@@ -24,7 +24,7 @@ export interface Subject {
   id: string;
   classId: string;
   name: string;
-  teacherId?: string;
+  teacherIds: string[];
 }
 
 export interface Topic {
@@ -89,6 +89,26 @@ export interface Grade {
   date: string;
 }
 
+export interface ReferenceMaterial {
+  id: string;
+  title: string;
+  type: 'government_plan' | 'lector_script' | 'other';
+  content: string;
+  url?: string;
+  dateAdded: string;
+}
+
+export interface CurriculumPreparation {
+  id: string;
+  title: string;
+  grade: string;
+  subject: string;
+  topic: string;
+  content: string;
+  dateGenerated: string;
+  sourceMaterialIds: string[];
+}
+
 interface AcademicContextType {
   schools: School[];
   classes: Class[];
@@ -99,6 +119,8 @@ interface AcademicContextType {
   students: Student[];
   timetable: TimetableEntry[];
   grades: Grade[];
+  referenceMaterials: ReferenceMaterial[];
+  curriculumPreparations: CurriculumPreparation[];
   
   // School Actions
   addSchool: (school: Omit<School, 'id'>) => void;
@@ -148,6 +170,18 @@ interface AcademicContextType {
   addGrade: (grade: Omit<Grade, 'id'>) => void;
   updateGrade: (id: string, grade: Partial<Grade>) => void;
   deleteGrade: (id: string) => void;
+
+  // Reference Material Actions
+  addReferenceMaterial: (material: Omit<ReferenceMaterial, 'id'>) => void;
+  deleteReferenceMaterial: (id: string) => void;
+
+  // Curriculum Preparation Actions
+  addCurriculumPreparation: (prep: Omit<CurriculumPreparation, 'id'>) => void;
+  deleteCurriculumPreparation: (id: string) => void;
+  
+  // NAS
+  nasUrl: string;
+  setNasUrl: (url: string) => void;
   
   // System
   resetData: () => void;
@@ -155,48 +189,134 @@ interface AcademicContextType {
 
 const AcademicContext = createContext<AcademicContextType | undefined>(undefined);
 
+const safeParse = (data: string | null, fallback: any) => {
+  if (!data) return fallback;
+  try {
+    return JSON.parse(data);
+  } catch (e) {
+    console.error('safeParse failed:', e);
+    return fallback;
+  }
+};
+
+const safeStringify = (obj: any) => {
+  // Pre-check for common browser objects that should never be stringified
+  const isBrowserObject = (val: any): boolean => {
+    try {
+      if (!val || typeof val !== 'object') return false;
+      
+      // Check for window/global using multiple strategies
+      if (typeof window !== 'undefined' && val === window) return true;
+      if (val.self === val && val.window === val) return true;
+      
+      const toString = Object.prototype.toString.call(val);
+      if (toString === '[object Window]' || toString === '[object global]' || toString === '[object HTMLDocument]') return true;
+      
+      // Node check
+      if (val instanceof Node || (val.nodeType && typeof val.nodeName === 'string')) return true;
+      
+      return false;
+    } catch (e) {
+      // If we can't even check, it's probably a restricted browser object (like a cross-origin window)
+      return true;
+    }
+  };
+
+  if (isBrowserObject(obj)) return '"[Browser Object]"';
+  
+  if (typeof obj === 'string') return JSON.stringify(obj);
+
+  try {
+    const cache = new WeakSet();
+    return JSON.stringify(obj, (key, value) => {
+      if (typeof value === 'object' && value !== null) {
+        if (isBrowserObject(value)) {
+          return '[Browser Object]';
+        }
+
+        if (cache.has(value)) {
+          return '[Circular]';
+        }
+        cache.add(value);
+      }
+      return value;
+    });
+  } catch (error) {
+    console.error('safeStringify fatal failure:', error);
+    try {
+      // Last resort: try to stringify only own properties that are primitive
+      const fallback: any = Array.isArray(obj) ? [] : {};
+      Object.keys(obj).forEach(key => {
+        const val = obj[key];
+        if (typeof val !== 'object' || val === null) {
+          fallback[key] = val;
+        } else {
+          fallback[key] = '[Complex Object]';
+        }
+      });
+      return JSON.stringify(fallback);
+    } catch (e) {
+      return Array.isArray(obj) ? "[]" : "{}";
+    }
+  }
+};
+
 export const AcademicProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [schools, setSchools] = useState<School[]>(() => {
     const saved = localStorage.getItem('educore_schools');
-    return saved ? JSON.parse(saved) : [
+    return safeParse(saved, [
       { id: 'sch-1', name: 'EDUCORE Academy A', address: 'London' },
       { id: 'sch-2', name: 'EDUCORE Academy B', address: 'Manchester' }
-    ];
+    ]);
   });
 
   const [classes, setClasses] = useState<Class[]>(() => {
     const saved = localStorage.getItem('educore_classes');
-    return saved ? JSON.parse(saved) : [
+    return safeParse(saved, [
       { id: 'cls-1', schoolId: 'sch-1', name: '10-A', year: '2025' },
       { id: 'cls-2', schoolId: 'sch-1', name: '10-B', year: '2025' },
       { id: 'cls-3', schoolId: 'sch-1', name: '11-A', year: '2025' }
-    ];
+    ]);
   });
 
   const [teachers, setTeachers] = useState<Teacher[]>(() => {
     const saved = localStorage.getItem('educore_teachers');
-    return saved ? JSON.parse(saved) : [
+    return safeParse(saved, [
       { id: 'tch-1', name: 'Mr. Smith', email: 'smith@educore.com', specialization: ['Mathematics', 'Physics'] },
       { id: 'tch-2', name: 'Dr. Jones', email: 'jones@educore.com', specialization: ['Physics'] },
       { id: 'tch-3', name: 'Ms. Davis', email: 'davis@educore.com', specialization: ['Literature'] }
-    ];
+    ]);
   });
 
   const [subjects, setSubjects] = useState<Subject[]>(() => {
     const saved = localStorage.getItem('educore_subjects');
-    return saved ? JSON.parse(saved) : [
-      { id: 'sub-1', classId: 'cls-1', name: 'Mathematics', teacherId: 'tch-1' },
-      { id: 'sub-2', classId: 'cls-1', name: 'Physics', teacherId: 'tch-2' },
-      { id: 'sub-3', classId: 'cls-1', name: 'Biology', teacherId: 'tch-1' },
-      { id: 'sub-4', classId: 'cls-1', name: 'History', teacherId: 'tch-3' },
-      { id: 'sub-5', classId: 'cls-1', name: 'Literature', teacherId: 'tch-3' },
-      { id: 'sub-6', classId: 'cls-1', name: 'Computer Science', teacherId: 'tch-2' }
-    ];
+    const parsed = safeParse(saved, [
+      { id: 'sub-1', classId: 'cls-1', name: 'English', teacherIds: ['tch-1'] },
+      { id: 'sub-2', classId: 'cls-1', name: 'Grammar', teacherIds: ['tch-2'] },
+      { id: 'sub-3', classId: 'cls-1', name: 'Literature', teacherIds: ['tch-1'] },
+      { id: 'sub-4', classId: 'cls-1', name: 'Speaking', teacherIds: ['tch-3'] },
+      { id: 'sub-5', classId: 'cls-1', name: 'Writing', teacherIds: ['tch-3'] },
+      { id: 'sub-6', classId: 'cls-1', name: 'Phonics', teacherIds: ['tch-2'] },
+      { id: 'sub-7', classId: 'cls-1', name: 'Mathematics', teacherIds: ['tch-1'] },
+      { id: 'sub-8', classId: 'cls-1', name: 'Slovak Language', teacherIds: ['tch-3'] }
+    ]);
+    
+    // Migration: Convert single teacherId to teacherIds array if necessary
+    return parsed.map((s: any) => {
+      if (s.teacherId && !s.teacherIds) {
+        const { teacherId, ...rest } = s;
+        return { ...rest, teacherIds: [teacherId] };
+      }
+      if (!s.teacherIds) {
+        return { ...s, teacherIds: [] };
+      }
+      return s;
+    });
   });
 
   const [topics, setTopics] = useState<Topic[]>(() => {
     const saved = localStorage.getItem('educore_topics');
-    if (saved) return JSON.parse(saved);
+    if (saved) return safeParse(saved, []);
     
     const initialTopics: Topic[] = [];
     const subjectIds = ['sub-1', 'sub-2', 'sub-3', 'sub-4', 'sub-5', 'sub-6'];
@@ -224,7 +344,7 @@ export const AcademicProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const [lessons, setLessons] = useState<Lesson[]>(() => {
     const saved = localStorage.getItem('educore_lessons_v2');
-    if (saved) return JSON.parse(saved);
+    if (saved) return safeParse(saved, []);
     
     const initialLessons: Lesson[] = [];
     const subjectIds = ['sub-1', 'sub-2', 'sub-3', 'sub-4', 'sub-5', 'sub-6'];
@@ -234,7 +354,6 @@ export const AcademicProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         `top-${sId}-0`, `top-${sId}-1`, `top-${sId}-2`, `top-${sId}-3`
       ];
       
-      // Generate ~10 lessons per subject as a sample (user asked for 38, but 228 objects might be heavy for initial load)
       for (let i = 1; i <= 10; i++) {
         const topicId = subjectTopics[Math.floor((i-1) / 2.5)];
         initialLessons.push({
@@ -269,61 +388,105 @@ export const AcademicProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const [students, setStudents] = useState<Student[]>(() => {
     const saved = localStorage.getItem('educore_students');
-    return saved ? JSON.parse(saved) : [
+    return safeParse(saved, [
       { id: 'std-1', classId: 'cls-1', name: 'Alice Johnson', email: 'alice@student.com', parentEmail: 'hawino@gmail.com' },
       { id: 'std-2', classId: 'cls-1', name: 'Bob Wilson', email: 'bob@student.com', parentEmail: 'parent@example.com' },
       { id: 'std-3', classId: 'cls-2', name: 'Charlie Brown', email: 'charlie@student.com', parentEmail: 'parent@example.com' }
-    ];
+    ]);
   });
 
   const [timetable, setTimetable] = useState<TimetableEntry[]>(() => {
     const saved = localStorage.getItem('educore_timetable');
-    return saved ? JSON.parse(saved) : [
+    return safeParse(saved, [
       { id: 'tt-1', classId: 'cls-1', subjectId: 'sub-1', day: 'Monday', startTime: '09:00', endTime: '09:45' },
       { id: 'tt-2', classId: 'cls-1', subjectId: 'sub-2', day: 'Monday', startTime: '10:00', endTime: '10:45' },
       { id: 'tt-3', classId: 'cls-1', subjectId: 'sub-3', day: 'Tuesday', startTime: '09:00', endTime: '09:45' },
       { id: 'tt-4', classId: 'cls-1', subjectId: 'sub-4', day: 'Wednesday', startTime: '11:00', endTime: '11:45' }
-    ];
+    ]);
   });
 
   const [grades, setGrades] = useState<Grade[]>(() => {
     const saved = localStorage.getItem('educore_grades');
-    return saved ? JSON.parse(saved) : [
+    return safeParse(saved, [
       { id: 'grd-1', studentId: 'std-1', subjectId: 'sub-1', score: 85, maxScore: 100, feedback: 'Great work on Algebra!', date: '2023-10-15' },
       { id: 'grd-2', studentId: 'std-1', subjectId: 'sub-2', score: 78, maxScore: 100, feedback: 'Good understanding of Mechanics.', date: '2023-10-18' }
-    ];
+    ]);
+  });
+
+  const [referenceMaterials, setReferenceMaterials] = useState<ReferenceMaterial[]>(() => {
+    const saved = localStorage.getItem('educore_reference_materials');
+    return safeParse(saved, [
+      {
+        id: 'ref-1',
+        title: 'Government Education Plan - Grade 1 English (Reform 2023)',
+        type: 'government_plan',
+        content: 'Standard curriculum for Grade 1 English language learners following the 2023 reform. Focus on basic communication, vocabulary (colors, numbers, animals), and simple greetings.',
+        dateAdded: '2023-09-01'
+      },
+      {
+        id: 'ref-2',
+        title: 'Lector Script - Phonics Introduction',
+        type: 'lector_script',
+        content: 'Script for teaching basic phonics to young learners. Focus on vowel sounds and simple consonant-vowel-consonant (CVC) words.',
+        dateAdded: '2023-09-15'
+      }
+    ]);
+  });
+
+  const [curriculumPreparations, setCurriculumPreparations] = useState<CurriculumPreparation[]>(() => {
+    const saved = localStorage.getItem('educore_curriculum_preps');
+    return safeParse(saved, []);
+  });
+
+  const [nasUrl, setNasUrl] = useState(() => {
+    return localStorage.getItem('educore_nas_url') || "";
   });
 
   const [isResetting, setIsResetting] = useState(false);
 
-  const safeStringify = (obj: any) => {
-    const cache = new Set();
-    return JSON.stringify(obj, (key, value) => {
-      if (typeof value === 'object' && value !== null) {
-        if (cache.has(value)) return;
-        cache.add(value);
-      }
-      return value;
-    });
-  };
-
   useEffect(() => {
     if (isResetting) return;
     
-    try {
-      localStorage.setItem('educore_schools', safeStringify(schools));
-      localStorage.setItem('educore_classes', safeStringify(classes));
-      localStorage.setItem('educore_teachers', safeStringify(teachers));
-      localStorage.setItem('educore_subjects', safeStringify(subjects));
-      localStorage.setItem('educore_topics', safeStringify(topics));
-      localStorage.setItem('educore_lessons_v2', safeStringify(lessons));
-      localStorage.setItem('educore_students', safeStringify(students));
-      localStorage.setItem('educore_timetable', safeStringify(timetable));
-      localStorage.setItem('educore_grades', safeStringify(grades));
-    } catch (error) {
-      console.error('Failed to save academic data:', error);
-    }
-  }, [schools, classes, teachers, subjects, topics, lessons, students, timetable, grades, isResetting]);
+    const saveData = (key: string, data: any) => {
+      try {
+        // Defensive check against window or other restricted objects before stringifying
+        const isRestricted = (val: any): boolean => {
+          try {
+            if (!val || typeof val !== 'object') return false;
+            if (typeof window !== 'undefined' && val === window) return true;
+            if (val.window === val && val.self === val) return true;
+            const toString = Object.prototype.toString.call(val);
+            return toString === '[object Window]' || toString === '[object global]' || toString === '[object HTMLDocument]';
+          } catch (e) {
+            return true;
+          }
+        };
+
+        if (isRestricted(data)) {
+          console.warn(`Attempted to save restricted object to ${key}`);
+          return;
+        }
+        
+        const stringified = safeStringify(data);
+        localStorage.setItem(key, stringified);
+      } catch (error) {
+        console.error(`Failed to save ${key}:`, error);
+      }
+    };
+
+    saveData('educore_schools', schools);
+    saveData('educore_classes', classes);
+    saveData('educore_teachers', teachers);
+    saveData('educore_subjects', subjects);
+    saveData('educore_topics', topics);
+    saveData('educore_lessons_v2', lessons);
+    saveData('educore_students', students);
+    saveData('educore_timetable', timetable);
+    saveData('educore_grades', grades);
+    saveData('educore_reference_materials', referenceMaterials);
+    saveData('educore_curriculum_preps', curriculumPreparations);
+    saveData('educore_nas_url', nasUrl);
+  }, [schools, classes, teachers, subjects, topics, lessons, students, timetable, grades, referenceMaterials, curriculumPreparations, nasUrl, isResetting]);
 
   const addSchool = (school: Omit<School, 'id'>) => {
     const id = `sch-${Date.now()}`;
@@ -370,9 +533,9 @@ export const AcademicProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setTopics(topics.map(t => t.id === id ? { ...t, ...updated } : t));
   };
 
-  const addLesson = (lesson: Omit<Lesson, 'id' | 'status'>) => {
+  const addLesson = (lesson: Omit<Lesson, 'id'>) => {
     const id = `les-${Date.now()}`;
-    setLessons([...lessons, { ...lesson, id, status: 'draft' }]);
+    setLessons([...lessons, { ...lesson, id }]);
     return id;
   };
 
@@ -481,9 +644,28 @@ export const AcademicProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setGrades(grades.filter(g => g.id !== id));
   };
 
+  const addReferenceMaterial = (material: Omit<ReferenceMaterial, 'id'>) => {
+    const id = `ref-${Date.now()}`;
+    setReferenceMaterials([...referenceMaterials, { ...material, id }]);
+  };
+
+  const deleteReferenceMaterial = (id: string) => {
+    setReferenceMaterials(referenceMaterials.filter(m => m.id !== id));
+  };
+
+  const addCurriculumPreparation = (prep: Omit<CurriculumPreparation, 'id'>) => {
+    const id = `prep-${Date.now()}`;
+    setCurriculumPreparations([...curriculumPreparations, { ...prep, id }]);
+  };
+
+  const deleteCurriculumPreparation = (id: string) => {
+    setCurriculumPreparations(curriculumPreparations.filter(p => p.id !== id));
+  };
+
   return (
     <AcademicContext.Provider value={{
       schools, classes, teachers, subjects, topics, lessons, students, timetable, grades,
+      referenceMaterials, curriculumPreparations,
       addSchool, updateSchool, deleteSchool,
       addClass, updateClass, deleteClass,
       addTeacher, updateTeacher, deleteTeacher,
@@ -493,6 +675,9 @@ export const AcademicProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       addStudent, updateStudent, deleteStudent,
       addTimetableEntry, updateTimetableEntry, deleteTimetableEntry,
       addGrade, updateGrade, deleteGrade,
+      addReferenceMaterial, deleteReferenceMaterial,
+      addCurriculumPreparation, deleteCurriculumPreparation,
+      nasUrl, setNasUrl,
       resetData
     }}>
       {children}

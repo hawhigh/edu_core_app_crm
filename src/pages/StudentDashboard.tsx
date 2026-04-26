@@ -33,18 +33,18 @@ export default function StudentDashboard() {
     <div className="flex flex-col gap-8">
       {/* Header / Student Details */}
       <header 
-        className="bg-card p-8 rounded-3xl border border-border flex flex-col md:flex-row justify-between items-center gap-6 shadow-sm"
+        className="bg-card p-6 md:p-8 rounded-3xl border border-border flex flex-col md:flex-row justify-between items-center gap-6 shadow-sm"
       >
-        <div className="flex items-center gap-6">
-          <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center text-3xl font-bold text-primary">
+        <div className="flex items-center gap-4 md:gap-6 w-full md:w-auto">
+          <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl bg-primary/10 flex items-center justify-center text-2xl md:text-3xl font-bold text-primary shrink-0">
             JS
           </div>
-          <div>
-            <h1 className="text-3xl font-bold text-text-dark">John Smith</h1>
-            <p className="text-text-muted mt-1">Student ID: #STU-84920</p>
+          <div className="min-w-0">
+            <h1 className="text-2xl md:text-3xl font-bold text-text-dark truncate">John Smith</h1>
+            <p className="text-text-muted mt-1 text-sm">ID: #STU-84920</p>
           </div>
         </div>
-        <div className="bg-lime/20 text-lime-700 px-6 py-3 rounded-2xl font-bold text-lg border border-lime/30">
+        <div className="bg-lime/20 text-lime-700 px-6 py-3 rounded-2xl font-bold text-base md:text-lg border border-lime/30 w-full md:w-auto text-center">
           Class 10-A
         </div>
       </header>
@@ -93,7 +93,7 @@ export default function StudentDashboard() {
           {/* Timetable Section */}
           <div className="mt-8">
             <h2 className="text-2xl font-bold text-text-dark mb-6">Weekly Schedule</h2>
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
               {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].map((day) => (
                 <div key={day} className="flex flex-col gap-3">
                   <div className="bg-bg p-2 rounded-xl border border-border text-center">

@@ -9,7 +9,7 @@ export default function TeacherDashboard() {
 
   // Mocking the current teacher as Mr. Smith (tch-1)
   const currentTeacherId = 'tch-1';
-  const teacherSubjects = subjects.filter(s => s.teacherId === currentTeacherId);
+  const teacherSubjects = subjects.filter(s => s.teacherIds.includes(currentTeacherId));
 
   const timetable = [
     { day: "Mon", lessons: ["Math 10-A", "Physics 11-B", "Free", "Math 12-C", "Math 10-A"] },
@@ -39,20 +39,20 @@ export default function TeacherDashboard() {
     <div className="flex flex-col gap-8">
       {/* Header / Teacher Details */}
       <header 
-        className="bg-card p-8 rounded-3xl border border-border flex flex-col md:flex-row justify-between items-center gap-6 shadow-sm"
+        className="bg-card p-6 md:p-8 rounded-3xl border border-border flex flex-col md:flex-row justify-between items-center gap-6 shadow-sm"
       >
-        <div className="flex items-center gap-6">
-          <div className="w-20 h-20 rounded-2xl bg-accent/10 flex items-center justify-center text-3xl font-bold text-accent">
+        <div className="flex items-center gap-4 md:gap-6 w-full md:w-auto">
+          <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl bg-accent/10 flex items-center justify-center text-2xl md:text-3xl font-bold text-accent shrink-0">
             MS
           </div>
-          <div>
-            <h1 className="text-3xl font-bold text-text-dark">Mr. Smith</h1>
-            <p className="text-text-muted mt-1">ID: #TCH-1029 • EDUCORE Academy A</p>
+          <div className="min-w-0">
+            <h1 className="text-2xl md:text-3xl font-bold text-text-dark truncate">Mr. Smith</h1>
+            <p className="text-text-muted mt-1 text-sm">ID: #TCH-1029 • EDUCORE Academy A</p>
           </div>
         </div>
-        <div className="flex gap-3">
-          <span className="bg-primary/10 text-primary px-4 py-2 rounded-xl font-bold text-sm border border-primary/20">Mathematics</span>
-          <span className="bg-accent/10 text-accent px-4 py-2 rounded-xl font-bold text-sm border border-accent/20">Physics</span>
+        <div className="flex flex-wrap gap-2 w-full md:w-auto justify-center md:justify-end">
+          <span className="bg-primary/10 text-primary px-3 py-1.5 rounded-xl font-bold text-xs border border-primary/20">Mathematics</span>
+          <span className="bg-accent/10 text-accent px-3 py-1.5 rounded-xl font-bold text-xs border border-accent/20">Physics</span>
         </div>
       </header>
 
@@ -77,13 +77,20 @@ export default function TeacherDashboard() {
                 </div>
                 <h3 className="text-xl font-bold text-text-dark mb-2">{sub.name}</h3>
                 <p className="text-sm text-text-muted mb-6">Manage lessons, topics and materials for this class.</p>
-                <Link 
-                  to={`/teacher/curriculum?subjectId=${sub.id}`}
-                  className="w-full py-3 rounded-xl bg-bg border border-border text-text-dark font-bold flex items-center justify-center gap-2 hover:bg-primary hover:text-white hover:border-primary transition-all"
-                >
-                  Go to Curriculum
-                  <ChevronRight className="w-4 h-4" />
-                </Link>
+                <div className="grid grid-cols-2 gap-3 mt-auto">
+                  <Link 
+                    to={`/teacher/curriculum?subjectId=${sub.id}`}
+                    className="py-3 rounded-xl bg-bg border border-border text-text-dark font-bold flex items-center justify-center gap-2 hover:bg-primary hover:text-white hover:border-primary transition-all text-sm"
+                  >
+                    Curriculum
+                  </Link>
+                  <Link 
+                    to={`/teacher/grades?subjectId=${sub.id}`}
+                    className="py-3 rounded-xl bg-bg border border-border text-text-dark font-bold flex items-center justify-center gap-2 hover:bg-accent hover:text-white hover:border-accent transition-all text-sm"
+                  >
+                    Grades
+                  </Link>
+                </div>
               </div>
             );
           })}
@@ -95,14 +102,14 @@ export default function TeacherDashboard() {
         <div 
           className="lg:col-span-2 flex flex-col gap-6"
         >
-          <div className="bg-card p-6 rounded-3xl border border-border">
-            <div className="flex justify-between items-center mb-6">
+          <div className="bg-card p-5 md:p-6 rounded-3xl border border-border">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
               <div className="flex flex-col gap-1">
                 <h2 className="text-xl font-bold text-text-dark flex items-center gap-2">
                   <Calendar className="w-5 h-5 text-primary" />
                   Weekly Timetable
                 </h2>
-                <div className="flex items-center gap-4 mt-2">
+                <div className="flex items-center gap-3 mt-2 flex-wrap">
                   <div className="flex items-center gap-1.5">
                     <div className="w-2.5 h-2.5 rounded-full bg-primary"></div>
                     <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider">Math</span>
@@ -113,20 +120,20 @@ export default function TeacherDashboard() {
                   </div>
                 </div>
               </div>
-              <div className="flex bg-bg p-1 rounded-xl border border-border">
+              <div className="flex bg-bg p-1 rounded-xl border border-border w-full sm:w-auto justify-center">
                 <button 
                   onClick={() => setView("list")}
-                  className={`p-2 rounded-lg transition-all ${view === "list" ? "bg-card shadow-sm text-primary" : "text-text-muted hover:text-text-dark"}`}
+                  className={`flex-1 sm:flex-none p-2 rounded-lg transition-all ${view === "list" ? "bg-card shadow-sm text-primary" : "text-text-muted hover:text-text-dark"}`}
                   title="List View"
                 >
-                  <List className="w-5 h-5" />
+                  <List className="w-5 h-5 mx-auto" />
                 </button>
                 <button 
                   onClick={() => setView("calendar")}
-                  className={`p-2 rounded-lg transition-all ${view === "calendar" ? "bg-card shadow-sm text-primary" : "text-text-muted hover:text-text-dark"}`}
+                  className={`flex-1 sm:flex-none p-2 rounded-lg transition-all ${view === "calendar" ? "bg-card shadow-sm text-primary" : "text-text-muted hover:text-text-dark"}`}
                   title="Calendar View"
                 >
-                  <LayoutGrid className="w-5 h-5" />
+                  <LayoutGrid className="w-5 h-5 mx-auto" />
                 </button>
               </div>
             </div>
@@ -172,8 +179,9 @@ export default function TeacherDashboard() {
                   </table>
                 </div>
               ) : (
-                <div className="flex flex-col gap-4">
-                  <div className="grid grid-cols-6 gap-2">
+                <div className="overflow-x-auto pb-4">
+                  <div className="flex flex-col gap-4 min-w-[600px]">
+                    <div className="grid grid-cols-6 gap-2">
                     <div className="p-2"></div>
                     {timetable.map((day, idx) => (
                       <div key={day.day} className={`p-2 text-center font-bold text-text-dark border-b-2 transition-colors ${currentDayIndex === idx + 1 ? "border-primary text-primary bg-primary/5 rounded-t-xl" : "border-primary/20"}`}>
@@ -215,10 +223,11 @@ export default function TeacherDashboard() {
                     ))}
                   </div>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </div>
+      </div>
 
         {/* Sidebar */}
         <div 

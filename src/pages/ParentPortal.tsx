@@ -72,26 +72,26 @@ export default function ParentPortal() {
   return (
     <div className="min-h-screen bg-[#f5f5f5] pb-20">
       {/* Top Nav */}
-      <nav className="bg-white border-b border-black/5 px-8 py-4 sticky top-0 z-40 backdrop-blur-md bg-white/80">
+      <nav className="bg-white border-b border-black/5 px-4 md:px-8 py-4 sticky top-0 z-40 backdrop-blur-md bg-white/80">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white font-bold">E</div>
-            <span className="font-bold text-[#1a1a1a]">EDUCORE Parent</span>
+          <div className="flex items-center gap-3 md:gap-4">
+            <div className="w-8 h-8 md:w-10 md:h-10 bg-primary rounded-xl flex items-center justify-center text-white font-bold">E</div>
+            <span className="font-bold text-[#1a1a1a] text-sm md:text-base">EDUCORE Parent</span>
           </div>
           
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-3 md:gap-6">
             {children.length > 1 && (
               <select 
                 value={selectedChildId || ""}
                 onChange={(e) => setSelectedChildId(e.target.value)}
-                className="bg-[#f5f5f5] border-none rounded-xl px-4 py-2 text-sm font-bold focus:ring-0 outline-none"
+                className="bg-[#f5f5f5] border-none rounded-xl px-3 py-1.5 md:px-4 md:py-2 text-xs md:text-sm font-bold focus:ring-0 outline-none max-w-[120px] md:max-w-none"
               >
                 {children.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
             )}
             <button 
               onClick={() => setIsLoggedIn(false)}
-              className="text-xs font-bold text-[#9e9e9e] hover:text-red-500 transition-colors"
+              className="text-[10px] md:text-xs font-bold text-[#9e9e9e] hover:text-red-500 transition-colors"
             >
               Logout
             </button>
@@ -99,33 +99,33 @@ export default function ParentPortal() {
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto px-8 pt-12">
+      <main className="max-w-7xl mx-auto px-4 md:px-8 pt-8 md:pt-12">
         {/* Hero Section */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-8 mb-12">
-          <div>
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 md:gap-8 mb-8 md:mb-12">
+          <div className="w-full md:w-auto">
             <div className="flex items-center gap-3 mb-4">
               <span className="bg-primary/10 text-primary text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">
                 Student Profile
               </span>
             </div>
-            <h1 className="text-5xl font-bold text-[#1a1a1a] tracking-tight">{selectedChild?.name}</h1>
-            <p className="text-[#9e9e9e] mt-2 text-lg">
+            <h1 className="text-3xl md:text-5xl font-bold text-[#1a1a1a] tracking-tight">{selectedChild?.name}</h1>
+            <p className="text-[#9e9e9e] mt-2 text-base md:text-lg">
               Class {childClass?.name} • {childSubjects.length} Subjects Enrolled
             </p>
           </div>
           
-          <div className="flex gap-4">
-            <div className="bg-white p-6 rounded-[24px] border border-black/5 shadow-sm min-w-[160px]">
-              <p className="text-[10px] font-bold text-[#9e9e9e] uppercase tracking-widest mb-1">Average Grade</p>
-              <p className="text-3xl font-bold text-[#1a1a1a]">
+          <div className="flex gap-4 w-full md:w-auto">
+            <div className="flex-1 md:flex-none bg-white p-4 md:p-6 rounded-[24px] border border-black/5 shadow-sm min-w-0 md:min-w-[160px]">
+              <p className="text-[10px] font-bold text-[#9e9e9e] uppercase tracking-widest mb-1">Avg Grade</p>
+              <p className="text-2xl md:text-3xl font-bold text-[#1a1a1a]">
                 {childGrades.length > 0 
                   ? Math.round(childGrades.reduce((acc, g) => acc + (g.score/g.maxScore)*100, 0) / childGrades.length)
                   : '--'}%
               </p>
             </div>
-            <div className="bg-white p-6 rounded-[24px] border border-black/5 shadow-sm min-w-[160px]">
+            <div className="flex-1 md:flex-none bg-white p-4 md:p-6 rounded-[24px] border border-black/5 shadow-sm min-w-0 md:min-w-[160px]">
               <p className="text-[10px] font-bold text-[#9e9e9e] uppercase tracking-widest mb-1">Attendance</p>
-              <p className="text-3xl font-bold text-green-500">98%</p>
+              <p className="text-2xl md:text-3xl font-bold text-green-500">98%</p>
             </div>
           </div>
         </div>
@@ -214,7 +214,12 @@ export default function ParentPortal() {
                         {subjects.find(s => s.id === entry.subjectId)?.name}
                       </h4>
                       <p className="text-xs text-[#9e9e9e]">
-                        Teacher: {teachers.find(t => t.id === subjects.find(s => s.id === entry.subjectId)?.teacherId)?.name}
+                        Teacher: {(() => {
+                          const sub = subjects.find(s => s.id === entry.subjectId);
+                          return sub?.teacherIds.length 
+                            ? sub.teacherIds.map(tid => teachers.find(t => t.id === tid)?.name).filter(Boolean).join(', ')
+                            : 'No Teacher';
+                        })()}
                       </p>
                     </div>
                   ))}
