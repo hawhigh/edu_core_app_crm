@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useAcademic, ReferenceMaterial } from "../contexts/AcademicContext";
 import { Sparkles, BookOpen, GraduationCap, FileText, ChevronRight, Loader2, Save, Trash2, Wand2 } from "lucide-react";
-import { GoogleGenAI } from "@google/genai";
 import Markdown from "react-markdown";
+import { generateCurriculum } from "../services/geminiService";
 
 export default function CurriculumGenerator() {
   const { referenceMaterials, curriculumPreparations, addCurriculumPreparation, deleteCurriculumPreparation, subjects, classes } = useAcademic();
@@ -39,51 +39,25 @@ export default function CurriculumGenerator() {
 
     setIsGenerating(true);
     try {
-      const apiKey = process.env.GEMINI_API_KEY;
-      if (!apiKey || apiKey === "TODO_KEYHERE") {
-        throw new Error("Gemini API Key is missing or not configured. Please set it in the application settings.");
-      }
-
-      const ai = new GoogleGenAI({ apiKey });
-      
       const selectedContext = referenceMaterials
         .filter(m => selectedMaterials.includes(m.id))
         .map(m => `[${m.type.toUpperCase()}]: ${m.title}\n${m.content}`)
         .join("\n\n");
 
-      const prompt = `
-        Generate a detailed curriculum preparation for a teaching lesson.
-        
-        Target Grade: Grade ${grade}
-        Subject Area: ${subject || "English"}
-        Topic: ${topic}
-        ${selectedClassId ? `Target Class: ${classes.find(c => c.id === selectedClassId)?.name}` : ""}
-        
-        ${selectedContext ? `Contextual Reference Materials (Use these as the primary source of truth for content and structure):\n${selectedContext}` : ""}
-        
-        Please provide a structured preparation including:
-        1. Lesson Aims (3-4 specific goals)
-        2. Key Vocabulary & Grammar Points
-        3. Lesson Structure (Introduction, Core Activities, Conclusion with timings)
-        4. Recommended Materials & Resources
-        5. Homework/Follow-up activity
-        
-        Format the output in professional Markdown.
-      `;
+      const targetClassName = selectedClassId ? classes.find(c => c.id === selectedClassId)?.name : undefined;
 
-      const response = await ai.models.generateContent({
-        model: "gemini-3.1-pro-preview",
-        contents: prompt,
+      const content = await generateCurriculum({
+        grade,
+        subject,
+        topic,
+        className: targetClassName,
+        context: selectedContext
       });
 
-      if (!response.text) {
-        throw new Error("The AI returned an empty response. Please try a different topic or check your reference materials.");
-      }
-
-      setGeneratedContent(response.text);
+      setGeneratedContent(content);
     } catch (error: any) {
       console.error("Generation failed:", error);
-      alert(`Generation failed: ${error.message || "Unknown error"}. Please check your API key and connection.`);
+      alert(`Generation failed: ${error.message || "Unknown error"}. Please ensure your GEMINI_API_KEY is configured in the application settings.`);
     } finally {
       setIsGenerating(false);
     }
